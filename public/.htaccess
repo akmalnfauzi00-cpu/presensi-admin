@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# kalau file/folder beneran ada, biarkan
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# selain itu lempar ke index.php (Router)
+RewriteRule ^ index.php [L]
