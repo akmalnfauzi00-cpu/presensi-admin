@@ -13,10 +13,12 @@ class User
         WHERE username LIKE ?
            OR nama LIKE ?
            OR role LIKE ?
+           OR nip LIKE ?
+           OR email LIKE ?
         ORDER BY created_at DESC, username ASC
       ");
       $like = '%' . $q . '%';
-      $st->execute([$like, $like, $like]);
+      $st->execute([$like, $like, $like, $like, $like]);
       return $st->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -71,42 +73,54 @@ class User
     return (int)($row['jml'] ?? 0) > 0;
   }
 
+  /**
+   * PERBAIKAN: Menambahkan nip dan email ke query INSERT
+   */
   public static function create(array $data): bool
   {
     $pdo = Db::pdo();
 
     $st = $pdo->prepare("
       INSERT INTO users
-      (id_user, username, password_hash, nama, role, status_aktif, created_at, updated_at)
+      (id_user, nip, username, password_hash, nama, email, role, status_aktif, created_at, updated_at)
       VALUES
-      (?, ?, ?, ?, ?, ?, NOW(), NOW())
+      (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ");
 
     return $st->execute([
       $data['id_user'],
+      $data['nip'],          // Tambahan
       $data['username'],
       $data['password_hash'],
       $data['nama'],
+      $data['email'],        // Tambahan
       $data['role'],
       $data['status_aktif'],
     ]);
   }
 
+  /**
+   * PERBAIKAN: Menambahkan nip dan email ke query UPDATE
+   */
   public static function update(string $id, array $data): bool
   {
     $pdo = Db::pdo();
 
     $fields = [
+      'nip = ?',          // Tambahan
       'username = ?',
       'nama = ?',
+      'email = ?',        // Tambahan
       'role = ?',
       'status_aktif = ?',
       'updated_at = NOW()',
     ];
 
     $params = [
+      $data['nip'],       // Tambahan
       $data['username'],
       $data['nama'],
+      $data['email'],     // Tambahan
       $data['role'],
       $data['status_aktif'],
     ];

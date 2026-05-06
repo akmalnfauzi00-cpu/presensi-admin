@@ -20,14 +20,20 @@ $error = Session::pullFlash('error');
         </div>
 
         <div>
-          <label class="muted">NIP (Login Aplikasi) *</label>
+          <label class="muted">KTA (Login Aplikasi) *</label>
           <input class="input" name="nip" required placeholder="Wajib untuk login aplikasi">
         </div>
 
         <div>
           <label class="muted">Password (Login Aplikasi)</label>
-          <input class="input" type="text" name="password" placeholder="Bebas. Kosongkan = dibuat otomatis">
-          <div class="muted" style="margin-top:6px;">Jika dikosongkan, password akan dibuat otomatis.</div>
+          <input class="input" type="text" name="password" id="passInputTambah" 
+                 placeholder="Wajib unik & kuat..." 
+                 pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                 title="Gagal! Password minimal 8 karakter, wajib ada huruf BESAR, huruf kecil, angka, dan simbol khusus (contoh: P@ssw0rd!)."
+                 required>
+          <div class="muted" style="margin-top:6px; font-size:12px; color:#EF4444;">
+            *Min. 8 karakter. Wajib kombinasi: Huruf Besar, Kecil, Angka & Simbol.
+          </div>
         </div>
 
         <div>

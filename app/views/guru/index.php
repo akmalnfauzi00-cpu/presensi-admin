@@ -1,213 +1,303 @@
 <?php
 $base = rtrim(str_replace('\\','/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base === '/') $base = '';
 
 $success = Session::pullFlash('success');
 $error   = Session::pullFlash('error');
 
 $q = $q ?? ($_GET['q'] ?? '');
+$tab = $_GET['tab'] ?? 'aktif';
+
+// --- FILTER DATA ---
+$rowsAktif = [];
+$rowsPending = [];
+
+if (!empty($rows)) {
+    foreach ($rows as $r) {
+        $statusCurrent = strtoupper(trim($r['status_aktif'] ?? '')); 
+        if ($statusCurrent === 'PENDING' || $statusCurrent === '') {
+            $rowsPending[] = $r;
+        } else {
+            $rowsAktif[] = $r;
+        }
+    }
+}
 ?>
 
 <div class="guru-page">
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
 
-  <div class="guru-page-header">
-    <div class="guru-title">
-      <span class="guru-title-icon">👥</span>
-      <h2>Kelola Guru</h2>
-    </div>
+    <div class="guru-container">
+        <div class="guru-page-header">
+            <div class="guru-title-area">
+                <h1>Kelola Guru</h1>
+                <p class="guru-subtitle">Pusat kontrol data tenaga pendidik SMP Muhammadiyah 2</p>
+            </div>
+            <a class="guru-btn-add" href="<?= $base ?>/guru/create">
+                Tambah Guru Baru
+            </a>
+        </div>
 
-    <a class="guru-btn-add" href="<?= $base ?>/guru/create">+ Tambah Guru</a>
-  </div>
+        <?php if ($success): ?>
+            <div class="guru-flash guru-success">
+                <span class="flash-icon">✓</span> <?= htmlspecialchars($success) ?>
+            </div>
+        <?php endif; ?>
 
-  <?php if ($success): ?>
-    <div class="guru-flash guru-success"><?= htmlspecialchars($success) ?></div>
-  <?php endif; ?>
+        <?php if ($error): ?>
+            <div class="guru-flash guru-error">
+                <span class="flash-icon">!</span> <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
 
-  <?php if ($error): ?>
-    <div class="guru-flash guru-error"><?= htmlspecialchars($error) ?></div>
-  <?php endif; ?>
+        <div class="guru-nav-tabs">
+            <a href="<?= $base ?>/guru?tab=aktif" class="nav-tab-item <?= $tab === 'aktif' ? 'is-active' : '' ?>">
+                Guru Aktif
+            </a>
+            <a href="<?= $base ?>/guru?tab=pending" class="nav-tab-item <?= $tab === 'pending' ? 'is-active' : '' ?>">
+                Verifikasi Baru
+                <?php if (count($rowsPending) > 0): ?>
+                    <span class="tab-badge"><?= count($rowsPending) ?></span>
+                <?php endif; ?>
+            </a>
+        </div>
 
-  <div class="guru-card">
-    <div class="guru-card-head">
-      <div class="guru-card-title">
-        <span class="guru-card-icon">🧾</span>
-        <span>Tabel Data Guru</span>
-      </div>
+        <div class="guru-main-card">
+            <div class="guru-control-bar">
+                <div class="table-info">
+                    <h3><?= $tab === 'aktif' ? 'Daftar Guru Terdaftar' : 'Permintaan Akun Guru' ?></h3>
+                </div>
 
-      <form class="guru-search" method="get" action="<?= $base ?>/guru">
-        <input name="q" placeholder="Cari nama..." value="<?= htmlspecialchars($q) ?>">
-        <button type="submit">Cari</button>
-      </form>
-    </div>
-
-    <div class="guru-card-body">
-      <div class="guru-table-wrap">
-        <table class="guru-table">
-          <thead>
-            <tr>
-              <th style="width:60px;">No</th>
-              <th style="width:90px;">Foto</th>
-              <th style="width:220px;">Nama Guru</th>
-              <th style="width:170px;">NIP</th>
-              <th style="width:220px;">Mata Pelajaran</th>
-              <th style="width:160px;">Jenis Kelamin</th>
-              <th style="width:140px;">Status</th>
-              <th style="width:260px;">Alamat</th>
-              <th style="width:160px;">No. HP</th>
-              <th style="width:260px;">Email</th>
-              <th style="width:210px; text-align:center;">Aksi</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <?php if (empty($rows)): ?>
-              <tr>
-                <td colspan="11" class="guru-empty">Belum ada data guru.</td>
-              </tr>
-            <?php endif; ?>
-
-            <?php $no=1; foreach ($rows as $r): ?>
-              <?php
-                $jk = $r['jenis_kelamin'] ?? '';
-                $jkClass = ($jk === 'Perempuan') ? 'guru-badge-green' : ($jk ? 'guru-badge-blue' : 'guru-badge-gray');
-
-                $st = $r['status_aktif'] ?? 'AKTIF';
-                $stClass = ($st === 'AKTIF') ? 'guru-badge-green' : (($st === 'CUTI') ? 'guru-badge-orange' : 'guru-badge-gray');
-
-                $alamat = trim((string)($r['alamat'] ?? '-'));
-                $alamatShort = (mb_strlen($alamat) > 30) ? mb_substr($alamat, 0, 30) . '...' : $alamat;
-
-                $mapel = trim((string)($r['mata_pelajaran'] ?? '-'));
-                $mapelShort = (mb_strlen($mapel) > 24) ? mb_substr($mapel, 0, 24) . '...' : $mapel;
-
-                // indikator akun presensi: sudah punya password_hash atau belum
-                $hasAccount = !empty($r['password_hash']);
-              ?>
-              <tr>
-                <td><?= $no++ ?></td>
-
-                <td>
-                  <?php if (!empty($r['foto'])): ?>
-                    <img class="guru-avatar" src="<?= $base ?>/<?= htmlspecialchars($r['foto']) ?>" alt="foto">
-                  <?php else: ?>
-                    <div class="guru-avatar guru-avatar-ph">
-                      <?= strtoupper(substr($r['nama_guru'] ?? 'G', 0, 1)) ?>
+                <form class="guru-search-box" method="get" action="<?= $base ?>/guru">
+                    <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
+                    <div class="search-input-wrapper">
+                        <input name="q" placeholder="Cari nama guru..." value="<?= htmlspecialchars($q) ?>">
+                        <button type="submit">Cari</button>
                     </div>
-                  <?php endif; ?>
-                </td>
+                </form>
+            </div>
 
-                <td class="guru-strong"><?= htmlspecialchars($r['nama_guru'] ?? '-') ?></td>
-                <td title="<?= htmlspecialchars($r['nip'] ?? '') ?>"><?= htmlspecialchars($r['nip'] ?? '-') ?></td>
+            <div class="guru-table-container">
+                <table class="guru-modern-table">
+                    <thead>
+                        <tr>
+                            <th class="txt-center">No</th>
+                            <th>Info Guru</th>
+                            <th>KTA</th>
+                            <?php if($tab === 'aktif'): ?>
+                                <th>Mata Pelajaran</th>
+                                <th>Gender</th>
+                                <th>Status</th>
+                                <th class="txt-center">Aksi</th>
+                            <?php else: ?>
+                                <th>Tgl Daftar</th>
+                                <th>Status</th>
+                                <th class="txt-center">Validasi</th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        $displayRows = ($tab === 'pending') ? $rowsPending : $rowsAktif;
+                        if (empty($displayRows)): 
+                        ?>
+                            <tr>
+                                <td colspan="10" class="guru-empty-state">
+                                    <p><?= $tab === 'aktif' ? 'Data guru masih kosong.' : 'Belum ada permintaan akun baru.' ?></p>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
 
-                <td title="<?= htmlspecialchars($mapel) ?>"><?= htmlspecialchars($mapelShort) ?></td>
+                        <?php $no=1; foreach ($displayRows as $r): ?>
+                            <?php
+                            $jk = $r['jenis_kelamin'] ?? '';
+                            $jkClass = ($jk === 'Perempuan') ? 'badge-pink' : 'badge-cyan';
+                            $stReal = strtoupper(trim($r['status_aktif'] ?? 'PENDING'));
+                            if ($stReal === '') $stReal = 'PENDING';
+                            ?>
+                            <tr>
+                                <td class="txt-center txt-muted"><?= $no++ ?></td>
+                                <td>
+                                    <div class="guru-info-cell">
+                                        <div class="avatar-wrapper">
+                                            <?php if (!empty($r['foto'])): ?>
+                                                <img src="<?= $base ?>/uploads/guru/<?= htmlspecialchars($r['foto']) ?>" alt="foto">
+                                            <?php else: ?>
+                                                <div class="avatar-initials">
+                                                    <?= strtoupper(substr($r['nama_guru'] ?? 'G', 0, 1)) ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="name-wrapper">
+                                            <span class="full-name"><?= htmlspecialchars($r['nama_guru'] ?? '-') ?></span>
+                                            <span class="phone-sub"><?= htmlspecialchars($r['no_hp'] ?? '-') ?></span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="txt-mono"><?= htmlspecialchars($r['nip'] ?? '-') ?></td>
 
-                <td>
-                  <?php if ($jk): ?>
-                    <span class="guru-badge <?= $jkClass ?>"><?= htmlspecialchars($jk) ?></span>
-                  <?php else: ?>
-                    <span class="guru-badge guru-badge-gray">-</span>
-                  <?php endif; ?>
-                </td>
+                                <?php if($tab === 'aktif'): ?>
+                                    <td><span class="subject-tag"><?= htmlspecialchars($r['mata_pelajaran'] ?? '-') ?></span></td>
+                                    <td><span class="pill-badge <?= $jkClass ?>"><?= htmlspecialchars($jk ?: '-') ?></span></td>
+                                    <td><span class="status-indicator <?= strtolower($stReal) ?>"><?= $stReal ?></span></td>
+                                <?php else: ?>
+                                    <td class="txt-small"><?= date('d/m/Y H:i', strtotime($r['created_at'] ?? 'now')) ?></td>
+                                    <td><span class="pill-badge badge-orange">MENUNGGU</span></td>
+                                <?php endif; ?>
 
-                <td>
-                  <span class="guru-badge <?= $stClass ?>"><?= htmlspecialchars($st) ?></span>
-                </td>
-
-                <td title="<?= htmlspecialchars($alamat) ?>"><?= htmlspecialchars($alamatShort) ?></td>
-                <td><?= htmlspecialchars($r['no_hp'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($r['email'] ?? '-') ?></td>
-
-                <td class="guru-aksi">
-                  <!-- 1) Edit data profil yang dipakai aplikasi -->
-                  <a class="guru-btn-icon guru-warn"
-                     href="<?= $base ?>/guru/edit?id=<?= urlencode($r['id_guru']) ?>"
-                     title="Edit Profil Guru (untuk aplikasi)">✏️</a>
-                  <!-- 3) Hapus -->
-                  <form method="post"
-                        action="<?= $base ?>/guru/delete"
-                        class="guru-delete-form"
-                        onsubmit="return confirm('Hapus guru ini?')">
-                    <input type="hidden" name="id_guru" value="<?= htmlspecialchars($r['id_guru']) ?>">
-                    <button type="submit" class="guru-btn-icon guru-danger" title="Hapus">🗑️</button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="guru-foot">
-        <a class="guru-back" href="<?= $base ?>/dashboard">← Kembali ke Dashboard</a>
-      </div>
+                                <td>
+                                    <div class="guru-action-group">
+                                        <?php if($tab === 'aktif'): ?>
+                                            <a class="btn-action btn-reset" href="<?= $base ?>/guru/reset-password/<?= urlencode($r['id_guru']) ?>" 
+                                               title="Reset Password" onclick="return confirm('Reset password guru <?= htmlspecialchars($r['nama_guru']) ?> menjadi 123456?')">
+                                               PW
+                                            </a>
+                                            <a class="btn-action btn-edit" href="<?= $base ?>/guru/edit?id=<?= urlencode($r['id_guru']) ?>" title="Edit">
+                                               Edit
+                                            </a>
+                                            <form method="post" action="<?= $base ?>/guru/delete" onsubmit="return confirm('Hapus data guru ini?')">
+                                                <input type="hidden" name="id_guru" value="<?= htmlspecialchars($r['id_guru']) ?>">
+                                                <button type="submit" class="btn-action btn-delete">Hapus</button>
+                                            </form>
+                                        <?php else: ?>
+                                            <a class="btn-approve" href="<?= $base ?>/guru/setujui?id=<?= urlencode($r['id_guru']) ?>">Setujui</a>
+                                            <a class="btn-reject" href="<?= $base ?>/guru/tolak?id=<?= urlencode($r['id_guru']) ?>" onclick="return confirm('Tolak?')">Tolak</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
-
 </div>
 
 <style>
-  .guru-page{ padding:18px; }
-  .guru-page-header{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin:4px 0 14px; }
-  .guru-title{ display:flex; align-items:center; gap:12px; }
-  .guru-title h2{ margin:0; font-size:32px; font-weight:900; }
-  .guru-title-icon{ font-size:20px; }
+    /* Global & Colors */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+        --soft-bg: #f0f4f8;
+        --card-white: rgba(255, 255, 255, 0.95);
+        --text-dark: #1e293b;
+        --text-gray: #64748b;
+    }
 
-  .guru-btn-add{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:12px; background:#1d4ed8; color:#fff; font-weight:900; text-decoration:none; }
-  .guru-btn-add:hover{ filter:brightness(.95); }
+    .guru-page { 
+        position: relative;
+        padding: 40px 20px; 
+        background-color: var(--soft-bg);
+        min-height: 100vh;
+        overflow: hidden;
+    }
 
-  .guru-flash{ padding:12px 14px; border-radius:12px; margin-bottom:12px; border:1px solid transparent; }
-  .guru-success{ background:#ecfdf5; border-color:#bbf7d0; color:#065f46; }
-  .guru-error{ background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+    /* Decorative Background Shapes */
+    .bg-shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: 0;
+    }
+    .shape-1 { width: 400px; height: 400px; background: rgba(59, 130, 246, 0.15); top: -100px; right: -100px; }
+    .shape-2 { width: 300px; height: 300px; background: rgba(29, 78, 216, 0.1); bottom: -50px; left: -50px; }
 
-  .guru-card{ border-radius:18px; overflow:hidden; background:#fff; border:1px solid #e5e7eb; }
-  .guru-card-head{ background:#1d4ed8; color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .guru-card-title{ display:flex; align-items:center; gap:10px; font-weight:900; font-size:18px; }
+    .guru-container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
 
-  .guru-search{ display:flex; align-items:center; background:#fff; border-radius:999px; overflow:hidden; height:42px; min-width:320px; }
-  .guru-search input{ border:0; outline:none; padding:0 14px; height:42px; width:100%; font-size:14px; }
-  .guru-search button{ border:0; height:42px; padding:0 16px; font-weight:900; background:#0b5ed7; color:#fff; cursor:pointer; }
-  .guru-search button:hover{ filter:brightness(.95); }
+    /* Header Section */
+    .guru-page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+    .guru-title-area h1 { margin: 0; font-size: 32px; font-weight: 800; color: var(--text-dark); letter-spacing: -1px; }
+    .guru-subtitle { margin: 5px 0 0; color: var(--text-gray); font-size: 15px; }
+    
+    .guru-btn-add { 
+        background: var(--primary-gradient); 
+        color: #fff; 
+        padding: 14px 28px; 
+        border-radius: 16px; 
+        font-weight: 700; 
+        text-decoration: none; 
+        box-shadow: 0 10px 20px rgba(29, 78, 216, 0.2);
+        transition: 0.3s;
+    }
+    .guru-btn-add:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(29, 78, 216, 0.3); }
 
-  .guru-card-body{ padding:14px; background:#f8fafc; }
-  .guru-table-wrap{ background:#fff; border-radius:14px; overflow:auto; border:1px solid #e5e7eb; }
+    /* Navigasi Tab */
+    .guru-nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; }
+    .nav-tab-item { 
+        padding: 12px 24px; 
+        text-decoration: none; 
+        color: var(--text-gray); 
+        font-weight: 700; 
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.5);
+        transition: 0.3s;
+    }
+    .nav-tab-item.is-active { background: #fff; color: #1d4ed8; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .tab-badge { background: #ef4444; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
 
-  .guru-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
-  .guru-table th{ background:#f3f4f6; text-align:left; padding:12px; font-weight:900; border-bottom:1px solid #e5e7eb; }
-  .guru-table td{ padding:12px; border-bottom:1px solid #eef2f7; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .guru-empty{ padding:18px !important; color:#6b7280; }
+    /* Main Card UI (Glass Effect) */
+    .guru-main-card { 
+        background: var(--card-white); 
+        border-radius: 24px; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04); 
+        border: 1px solid rgba(255,255,255,0.8);
+        overflow: hidden; 
+    }
+    .guru-control-bar { padding: 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(248, 250, 252, 0.5); }
+    .guru-control-bar h3 { margin: 0; font-size: 18px; color: var(--text-dark); font-weight: 700; }
 
-  .guru-strong{ font-weight:900; }
+    /* Search Box */
+    .search-input-wrapper { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 6px; display: flex; gap: 5px; width: 380px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+    .search-input-wrapper input { border: none; padding: 8px 15px; outline: none; width: 100%; font-size: 14px; color: var(--text-dark); }
+    .search-input-wrapper button { background: #1d4ed8; color: #fff; border: none; padding: 8px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 
-  .guru-avatar{ width:44px; height:44px; border-radius:12px; object-fit:cover; border:1px solid #e5e7eb; display:block; }
-  .guru-avatar-ph{ display:flex; align-items:center; justify-content:center; background:#e8efff; color:#0b5ed7; font-weight:900; }
+    /* Modern Table Style */
+    .guru-modern-table { width: 100%; border-collapse: collapse; }
+    .guru-modern-table th { padding: 20px 25px; text-align: left; font-size: 12px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #f1f5f9; }
+    .guru-modern-table td { padding: 20px 25px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: var(--text-dark); }
+    .guru-modern-table tbody tr:hover { background: rgba(241, 245, 249, 0.5); }
 
-  .guru-badge{ display:inline-flex; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900; }
-  .guru-badge-blue{ background:#dbeafe; color:#1d4ed8; }
-  .guru-badge-green{ background:#dcfce7; color:#166534; }
-  .guru-badge-orange{ background:#ffedd5; color:#9a3412; }
-  .guru-badge-gray{ background:#e5e7eb; color:#374151; }
+    /* Cells Info */
+    .guru-info-cell { display: flex; align-items: center; gap: 16px; }
+    .avatar-wrapper { width: 48px; height: 48px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-initials { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #dbeafe; color: #1d4ed8; font-size: 18px; }
+    .full-name { font-weight: 700; color: var(--text-dark); display: block; font-size: 15px; }
+    .phone-sub { font-size: 12px; color: var(--text-gray); }
+    .subject-tag { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    
+    .txt-mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-gray); }
+    .txt-center { text-align: center; }
 
-  .guru-aksi{ text-align:center; white-space:nowrap; min-width:210px; }
-  .guru-delete-form{ display:inline; }
+    /* Badges */
+    .pill-badge { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; }
+    .badge-cyan { background: #e0f2fe; color: #0369a1; }
+    .badge-pink { background: #fce7f3; color: #be185d; }
+    .badge-orange { background: #fff7ed; color: #c2410c; }
+    
+    .status-indicator { font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .status-indicator::before { content: ''; width: 8px; height: 8px; border-radius: 50%; }
+    .status-indicator.aktif::before { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+    .status-indicator.pending::before { background: #f59e0b; }
 
-  .guru-btn-icon{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:40px; height:40px; border-radius:12px;
-    border:0; cursor:pointer; text-decoration:none;
-    margin:0 4px;
-    font-size:16px;
-  }
-  .guru-warn{ background:#fbbf24; }
-  .guru-primary{ background:#1d4ed8; color:#fff; }
-  .guru-info{ background:#0ea5e9; color:#fff; }
-  .guru-danger{ background:#ef4444; color:#fff; }
-  .guru-btn-icon:hover{ filter:brightness(.95); }
+    /* Action Buttons */
+    .guru-action-group { display: flex; gap: 8px; justify-content: center; }
+    .btn-action { border: none; padding: 9px 15px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; transition: 0.2s; }
+    .btn-reset { background: #eff6ff; color: #2563eb; }
+    .btn-edit { background: #fffbeb; color: #d97706; }
+    .btn-delete { background: #fef2f2; color: #ef4444; }
+    .btn-action:hover { filter: brightness(0.95); transform: scale(1.05); }
 
-  .guru-foot{ padding:10px 4px 0; display:flex; justify-content:flex-start; }
-  .guru-back{ color:#111827; text-decoration:none; font-weight:700; }
-  .guru-back:hover{ text-decoration:underline; }
+    .btn-approve { background: #10b981; color: #fff; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 13px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+    .btn-reject { color: #ef4444; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 13px; }
 
-  @media (max-width: 900px){
-    .guru-card-head{ flex-direction:column; align-items:flex-start; }
-    .guru-search{ width:100%; min-width:unset; }
-  }
+    .btn-back { color: var(--text-gray); text-decoration: none; font-weight: 700; font-size: 14px; transition: 0.3s; }
+    .btn-back:hover { color: #1d4ed8; padding-left: 5px; }
+
+    @media (max-width: 768px) {
+        .guru-page-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+        .guru-search-box { width: 100%; }
+        .search-input-wrapper { width: 100%; }
+    }
 </style>

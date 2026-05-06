@@ -1,195 +1,179 @@
 <?php function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); } ?>
 <?php $today = date('Y-m-d'); ?>
 
-<div class="card">
-  <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-    <div>
-      <div class="d-title">Dashboard</div>
-      <div class="p">Ringkasan presensi hari ini</div>
+<div class="db-header">
+    <div class="db-welcome">
+        <h1>Halo, Admin </h1>
+        <p>Cek kondisi kehadiran guru SMP Muhammadiyah 2 hari ini.</p>
     </div>
-    <div class="p" style="white-space:nowrap;"><?= h(date('l, d F Y')) ?></div>
-  </div>
+    <div class="db-date-pill">
+        <span><?= h(date('l, d F Y')) ?></span>
+    </div>
 </div>
 
-<div style="height:12px;"></div>
-
-<div class="d-cards">
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/guru"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Guru Terdaftar</div>
-      <div class="d-val"><?= (int)$totalGuru ?></div>
-      <div class="d-sub">Klik untuk lihat data guru</div>
-    </div>
-  </a>
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Hadir</div>
-      <div class="d-val"><?= (int)$hadirHariIni ?></div>
-      <div class="d-sub">Klik untuk lihat laporan hari ini</div>
-    </div>
-  </a>
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Terlambat</div>
-      <div class="d-val" style="color:#b45309;"><?= (int)$terlambatHariIni ?></div>
-      <div class="d-sub">Klik untuk lihat laporan hari ini</div>
-    </div>
-  </a>
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Izin / Sakit</div>
-      <div class="d-val"><?= (int)$izinSakitHariIni ?></div>
-      <div class="d-sub">Klik untuk lihat laporan hari ini</div>
-    </div>
-  </a>
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Tidak Hadir</div>
-      <div class="d-val" style="color:#7c3aed;"><?= (int)$tidakHadirHariIni ?></div>
-      <div class="d-sub">Guru yang belum punya presensi hari ini</div>
-    </div>
-  </a>
-
-  <a class="card d-stat d-link"
-     href="<?= $base ?>/pengajuan"
-     style="text-decoration:none;color:inherit;display:block;">
-    <div class="card-body">
-      <div class="p">Pengajuan Menunggu</div>
-      <div class="d-val" style="color:#2563eb;"><?= (int)($pengajuanMenunggu ?? 0) ?></div>
-      <div class="d-sub">Klik untuk verifikasi izin / sakit</div>
-    </div>
-  </a>
-
-</div>
-
-<div style="height:14px;"></div>
-
-<div class="card d-full">
-  <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;">
-    <div class="d-section">Tren Kehadiran (7 hari)</div>
-    <div class="p">Hadir per hari</div>
-  </div>
-
-  <div class="card-body">
-    <div class="d-trend">
-      <?php foreach ($trend as $t):
-        $hBar = $maxTrend > 0 ? (int)round(($t['value'] / $maxTrend) * 140) : 10;
-        if ($hBar < 10) $hBar = 10;
-      ?>
-        <div class="d-trend-item">
-          <div class="d-bar-wrap">
-            <div class="d-bar" style="height:<?= $hBar ?>px;"></div>
-          </div>
-          <div class="d-day"><?= h(substr($t['label'],0,3)) ?></div>
-          <div class="d-num"><?= (int)$t['value'] ?></div>
+<div class="bento-grid">
+    <a class="bento-item stat-blue" href="<?= $base ?>/guru">
+        <div class="bento-content">
+            <span class="label">Total Guru</span>
+            <span class="value"><?= (int)$totalGuru ?></span>
         </div>
-      <?php endforeach; ?>
-    </div>
+        <div class="bento-footer">Database Guru →</div>
+    </a>
 
-    <?php
-      $sum = 0;
-      foreach ($trend as $t) $sum += (int)$t['value'];
-      $avg = round($sum / max(1, count($trend)));
-    ?>
-    <div class="p" style="margin-top:10px;color:#64748b;">
-      Rata-rata 7 hari: <?= (int)$avg ?>
-    </div>
-  </div>
+    <a class="bento-item stat-green" href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>">
+        <div class="bento-content">
+            <span class="label">Hadir Tepat Waktu</span>
+            <span class="value"><?= (int)$hadirHariIni ?></span>
+        </div>
+        <div class="bento-footer">Lihat Detail</div>
+    </a>
+
+    <a class="bento-item stat-orange" href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>">
+        <div class="bento-content">
+            <span class="label">Terlambat</span>
+            <span class="value"><?= (int)$terlambatHariIni ?></span>
+        </div>
+        <div class="bento-footer">Cek Siapa Saja</div>
+    </a>
+
+    <a class="bento-item stat-cyan" href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>">
+        <div class="bento-content">
+            <span class="label">Izin / Sakit</span>
+            <span class="value"><?= (int)$izinSakitHariIni ?></span>
+        </div>
+        <div class="bento-footer">Lihat Berkas</div>
+    </a>
+
+    <a class="bento-item stat-red" href="<?= $base ?>/laporan?mulai=<?= h($today) ?>&selesai=<?= h($today) ?>">
+        <div class="bento-content">
+            <span class="label">Tanpa Keterangan</span>
+            <span class="value"><?= (int)$tidakHadirHariIni ?></span>
+        </div>
+        <div class="bento-footer">Tindak Lanjut</div>
+    </a>
+
+    <a class="bento-item stat-purple" href="<?= $base ?>/pengajuan">
+        <div class="bento-content">
+            <span class="label">Butuh Verifikasi</span>
+            <span class="value"><?= (int)($pengajuanMenunggu ?? 0) ?></span>
+        </div>
+        <div class="bento-footer">Buka Pengajuan</div>
+    </a>
 </div>
 
-<div style="height:14px;"></div>
-
-<div class="card d-full">
-  <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;">
-    <div class="d-section">Aktivitas Terkini</div>
-    <div class="p">5 terakhir</div>
-  </div>
-
-  <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
-    <?php if (empty($aktivitas)): ?>
-      <div class="p" style="color:#64748b;">Belum ada aktivitas presensi.</div>
-    <?php else: ?>
-      <?php foreach ($aktivitas as $a):
-        $status = strtoupper((string)($a['status_kehadiran'] ?? ''));
-        $late = (int)($a['is_terlambat'] ?? 0);
-        $time = !empty($a['created_at']) ? date('H:i', strtotime($a['created_at'])) : '-';
-        $badgeStyle = "background:#e5e7eb;color:#334155;";
-        if ($status === 'HADIR') $badgeStyle = "background:#dcfce7;color:#166534;";
-        if ($status === 'IZIN' || $status === 'SAKIT') $badgeStyle = "background:#e0f2fe;color:#075985;";
-      ?>
-        <div class="d-act">
-          <div>
-            <div class="d-act-name"><?= h($a['nama_guru'] ?? '-') ?></div>
-            <div class="p" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <span class="d-badge" style="<?= $badgeStyle ?>"><?= h($status) ?></span>
-              <?php if ($status === 'HADIR' && $late === 1): ?>
-                <span class="d-badge" style="background:#ffedd5;color:#9a3412;">Terlambat</span>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="d-act-time"><?= h($time) ?></div>
+<div class="db-container">
+    <div class="db-main card-glass">
+        <?php
+          // Perbaikan Error: Deklarasikan $avg di sini jika belum ada
+          $sum = 0;
+          foreach ($trend as $t) $sum += (int)$t['value'];
+          $calculatedAvg = round($sum / max(1, count($trend)));
+        ?>
+        <div class="card-header">
+            <h3>Tren Kehadiran</h3>
+            <span class="avg-tag">Rata-rata: <?= (int)$calculatedAvg ?></span>
         </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
-  </div>
+        <div class="chart-area">
+            <?php foreach ($trend as $t):
+                $hBar = $maxTrend > 0 ? (int)round(($t['value'] / $maxTrend) * 100) : 5;
+            ?>
+                <div class="bar-item">
+                    <div class="bar-track">
+                        <div class="bar-fill" style="height:<?= max(5, $hBar) ?>%;">
+                            <span class="bar-tooltip"><?= (int)$t['value'] ?></span>
+                        </div>
+                    </div>
+                    <span class="bar-label"><?= h(substr($t['label'],0,3)) ?></span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div class="db-side card-glass">
+        <div class="card-header">
+            <h3>Aktivitas Baru</h3>
+            <div class="live-dot"></div>
+        </div>
+        <div class="activity-feed">
+            <?php if (empty($aktivitas)): ?>
+                <p class="empty-text">Belum ada absen masuk hari ini.</p>
+            <?php else: ?>
+                <?php foreach ($aktivitas as $a):
+                    $status = strtoupper((string)($a['status_kehadiran'] ?? ''));
+                    $isLate = (int)($a['is_terlambat'] ?? 0);
+                    // Ambil Tanggal dan Jam
+                    $timestamp = strtotime($a['created_at']);
+                    $dateFormatted = date('d M', $timestamp);
+                    $timeFormatted = date('H:i', $timestamp);
+                ?>
+                    <div class="feed-item">
+                        <div class="avatar"><?= h(substr($a['nama_guru'], 0, 1)) ?></div>
+                        <div class="feed-info">
+                            <div style="display:flex; justify-content: space-between; align-items: flex-start;">
+                                <strong><?= h($a['nama_guru']) ?></strong>
+                                <span class="feed-date-time"><?= h($dateFormatted) ?>, <?= h($timeFormatted) ?></span>
+                            </div>
+                            <div class="tags">
+                                <span class="tag <?= strtolower($status) ?>"><?= h($status) ?></span>
+                                <?php if ($isLate): ?><span class="tag late">Terlambat</span><?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <style>
-  .d-title, .d-section, .d-val, .d-rank-title, .d-rank-name, .d-day, .d-num,
-  .d-act-name, .d-act-time, .d-sub, .d-badge { font-weight: 400 !important; }
+    /* CSS Dasar Tetap Sama, Hanya Penyesuaian Style Baru */
+    :root {
+        --blue: #3b82f6; --green: #10b981; --orange: #f59e0b;
+        --red: #ef4444; --purple: #8b5cf6; --text: #1e293b;
+    }
 
-  .d-title{font-size:18px;letter-spacing:.2px;color:#0f172a;}
-  .d-section{color:#0f172a;}
-  .d-sub{margin-top:10px;color:#64748b;font-size:12px;}
-  .d-val{font-size:30px;line-height:1;margin-top:6px;color:#0f172a;}
+    .db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .db-welcome h1 { font-size: 24px; font-weight: 800; color: var(--text); margin: 0; }
+    .db-welcome p { color: #64748b; margin: 5px 0 0 0; }
+    .db-date-pill { background: #fff; padding: 10px 20px; border-radius: 99px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); font-weight: 600; border: 1px solid #f1f5f9; }
 
-  .d-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
-  .d-stat .card-body{padding:14px 16px;}
-  .d-full{width:100%;}
+    .bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .bento-item { background: #fff; padding: 24px; border-radius: 24px; text-decoration: none; border: 1px solid #f1f5f9; transition: all 0.3s ease; display: flex; flex-direction: column; gap: 5px; }
+    .bento-item:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+    
+    .bento-content .label { display: block; color: #64748b; font-size: 14px; font-weight: 600; }
+    .bento-content .value { display: block; font-size: 32px; font-weight: 800; color: var(--text); margin-top: 5px; }
+    .bento-footer { font-size: 12px; font-weight: 700; color: #94a3b8; border-top: 1px solid #f8fafc; padding-top: 12px; margin-top: 10px;}
 
-  .d-link{cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;}
-  .d-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08);}
+    .stat-blue { background: #eff6ff; } .stat-blue .value { color: #1d4ed8; }
+    .stat-green { background: #ecfdf5; } .stat-green .value { color: #059669; }
+    .stat-orange { background: #fffbeb; } .stat-orange .value { color: #d97706; }
+    .stat-cyan { background: #f0f9ff; } .stat-red { background: #fef2f2; } .stat-purple { background: #f5f3ff; }
 
-  .d-trend{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;}
-  .d-trend-item{text-align:center;}
-  .d-bar-wrap{height:150px;display:flex;align-items:flex-end;justify-content:center;}
-  .d-bar{width:100%;background:#dbeafe;border-radius:14px;}
-  .d-day{margin-top:8px;font-size:12px;color:#64748b;}
-  .d-num{font-size:12px;color:#0f172a;margin-top:2px;}
+    .db-container { display: flex; gap: 25px; }
+    .db-main { flex: 2; } .db-side { flex: 1.2; } /* Side sedikit diperlebar untuk tanggal */
+    .card-glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border-radius: 28px; padding: 30px; border: 1px solid #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .card-header h3 { margin: 0; font-size: 18px; font-weight: 800; }
 
-  .d-act{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eef2f7;border-radius:14px;gap:12px;}
-  .d-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;}
-  .d-act-name{color:#0f172a;}
-  .d-act-time{color:#0f172a;white-space:nowrap;}
+    .avg-tag { background: var(--text); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
-  @media (max-width:1400px){
-    .d-cards{grid-template-columns:repeat(3,1fr);}
-  }
+    .chart-area { display: flex; height: 200px; align-items: flex-end; justify-content: space-between; }
+    .bar-track { width: 35px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: flex-end; overflow: hidden; }
+    .bar-fill { width: 100%; background: linear-gradient(to top, var(--blue), #60a5fa); border-radius: 12px; transition: height 1s ease; position: relative; }
+    .bar-label { font-size: 12px; font-weight: 700; color: #94a3b8; margin-top: 10px; }
 
-  @media (max-width:900px){
-    .d-cards{grid-template-columns:repeat(2,1fr);}
-    .d-trend{grid-template-columns:repeat(4,1fr);}
-  }
+    .activity-feed { display: flex; flex-direction: column; gap: 20px; }
+    .feed-item { display: flex; align-items: flex-start; gap: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+    .avatar { width: 40px; height: 40px; background: #e2e8f0; border-radius: 12px; display: grid; place-items: center; font-weight: 800; flex-shrink: 0; }
+    .feed-info { flex: 1; }
+    .feed-date-time { font-size: 11px; color: #94a3b8; font-weight: 600; }
+    .tag { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-top: 5px; display: inline-block;}
+    .tag.hadir { background: #d1fae5; color: #065f46; }
+    .tag.izin, .tag.sakit { background: #e0f2fe; color: #075985; }
+    .tag.late { background: #fee2e2; color: #991b1b; }
 
-  @media (max-width:640px){
-    .d-cards{grid-template-columns:1fr;}
-    .d-trend{grid-template-columns:repeat(2,1fr);}
-    .d-act{flex-direction:column;align-items:flex-start;}
-    .d-act-time{white-space:normal;}
-  }
+    .live-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+
+    @media (max-width: 1000px) { .db-container { flex-direction: column; } }
 </style>

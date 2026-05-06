@@ -66,6 +66,10 @@ try {
           <span>Laporan</span>
         </a>
 
+        <a class="<?= active($path, '/pengumuman') ?>" href="<?= $base ?>/pengumuman">
+  <span>Pengumuman</span>
+</a>
+
         <a class="<?= active($path, '/pengajuan') ?>" href="<?= $base ?>/pengajuan" style="display:flex;align-items:center;gap:8px;">
           <span>Pengajuan</span>
           <?php if ($badgePending > 0): ?>

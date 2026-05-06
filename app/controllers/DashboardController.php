@@ -35,49 +35,56 @@ class DashboardController
 
     $totalGuru = (int)$pdo->query("SELECT COUNT(*) FROM guru")->fetchColumn();
 
-    // Hadir hari ini = hanya yang hadir dan tidak terlambat
+    // PERBAIKAN: Menggunakan JOIN ke tabel kehadiran (k.tanggal)
+    // Hadir hari ini
     $stmt = $pdo->prepare("
-      SELECT COUNT(DISTINCT id_guru)
-      FROM presensi_detail
-      WHERE DATE(COALESCE(jam_masuk, created_at)) = :t
-        AND status_kehadiran = 'HADIR'
-        AND COALESCE(is_terlambat,0) = 0
+      SELECT COUNT(DISTINCT pd.id_guru)
+      FROM presensi_detail pd
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal = :t
+        AND pd.status_kehadiran = 'HADIR'
+        AND COALESCE(pd.is_terlambat,0) = 0
     ");
     $stmt->execute([':t' => $today]);
     $hadirHariIni = (int)$stmt->fetchColumn();
 
-    // Terlambat hari ini = hadir tapi terlambat
+    // Terlambat hari ini
     $stmt = $pdo->prepare("
-      SELECT COUNT(DISTINCT id_guru)
-      FROM presensi_detail
-      WHERE DATE(COALESCE(jam_masuk, created_at)) = :t
-        AND status_kehadiran = 'HADIR'
-        AND COALESCE(is_terlambat,0) = 1
+      SELECT COUNT(DISTINCT pd.id_guru)
+      FROM presensi_detail pd
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal = :t
+        AND pd.status_kehadiran = 'HADIR'
+        AND COALESCE(pd.is_terlambat,0) = 1
     ");
     $stmt->execute([':t' => $today]);
     $terlambatHariIni = (int)$stmt->fetchColumn();
 
+    // Izin hari ini
     $stmt = $pdo->prepare("
-      SELECT COUNT(DISTINCT id_guru)
-      FROM presensi_detail
-      WHERE DATE(COALESCE(jam_masuk, created_at)) = :t
-        AND status_kehadiran = 'IZIN'
+      SELECT COUNT(DISTINCT pd.id_guru)
+      FROM presensi_detail pd
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal = :t
+        AND pd.status_kehadiran = 'IZIN'
     ");
     $stmt->execute([':t' => $today]);
     $izinHariIni = (int)$stmt->fetchColumn();
 
+    // Sakit hari ini
     $stmt = $pdo->prepare("
-      SELECT COUNT(DISTINCT id_guru)
-      FROM presensi_detail
-      WHERE DATE(COALESCE(jam_masuk, created_at)) = :t
-        AND status_kehadiran = 'SAKIT'
+      SELECT COUNT(DISTINCT pd.id_guru)
+      FROM presensi_detail pd
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal = :t
+        AND pd.status_kehadiran = 'SAKIT'
     ");
     $stmt->execute([':t' => $today]);
     $sakitHariIni = (int)$stmt->fetchColumn();
 
     $izinSakitHariIni = $izinHariIni + $sakitHariIni;
 
-    // Tidak hadir = total guru - (hadir + terlambat + izin + sakit)
+    // Tidak hadir
     $tidakHadirHariIni = max(0, $totalGuru - ($hadirHariIni + $terlambatHariIni + $izinHariIni + $sakitHariIni));
     $belumAbsen = $tidakHadirHariIni;
 
@@ -89,17 +96,18 @@ class DashboardController
     $stmt->execute();
     $pengajuanMenunggu = (int)$stmt->fetchColumn();
 
-    // Trend 7 hari: hanya hadir yang tidak terlambat
+    // Trend 7 hari
     $trend = [];
     for ($i = 6; $i >= 0; $i--) {
       $d = date('Y-m-d', strtotime("-{$i} day"));
 
       $stmt = $pdo->prepare("
-        SELECT COUNT(DISTINCT id_guru)
-        FROM presensi_detail
-        WHERE DATE(COALESCE(jam_masuk, created_at)) = :d
-          AND status_kehadiran = 'HADIR'
-          AND COALESCE(is_terlambat,0) = 0
+        SELECT COUNT(DISTINCT pd.id_guru)
+        FROM presensi_detail pd
+        JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+        WHERE k.tanggal = :d
+          AND pd.status_kehadiran = 'HADIR'
+          AND COALESCE(pd.is_terlambat,0) = 0
       ");
       $stmt->execute([':d' => $d]);
 
@@ -116,6 +124,7 @@ class DashboardController
     }
     if ($maxTrend < 1) $maxTrend = 1;
 
+    // Aktivitas Terbaru
     $stmt = $pdo->prepare("
       SELECT
         g.nama_guru,
@@ -131,53 +140,27 @@ class DashboardController
     $stmt->execute();
     $aktivitas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Top disiplin: hadir = hanya yang tidak terlambat
+    // Top Disiplin
     $stmt = $pdo->prepare("
       SELECT
         g.id_guru,
         g.nama_guru,
         g.nip,
 
-        SUM(
-          CASE
-            WHEN pd.status_kehadiran='HADIR'
-             AND COALESCE(pd.is_terlambat,0)=0
-            THEN 1 ELSE 0
-          END
-        ) AS hadir,
-
-        SUM(
-          CASE
-            WHEN pd.status_kehadiran='HADIR'
-             AND COALESCE(pd.is_terlambat,0)=1
-            THEN 1 ELSE 0
-          END
-        ) AS terlambat,
-
+        SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=0 THEN 1 ELSE 0 END) AS hadir,
+        SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=1 THEN 1 ELSE 0 END) AS terlambat,
         SUM(CASE WHEN pd.status_kehadiran IN ('IZIN','SAKIT') THEN 1 ELSE 0 END) AS izin,
 
         (
-          2 * SUM(
-                CASE
-                  WHEN pd.status_kehadiran='HADIR'
-                   AND COALESCE(pd.is_terlambat,0)=0
-                  THEN 1 ELSE 0
-                END
-              )
-          - 1 * SUM(
-                CASE
-                  WHEN pd.status_kehadiran='HADIR'
-                   AND COALESCE(pd.is_terlambat,0)=1
-                  THEN 1 ELSE 0
-                END
-              )
+          2 * SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=0 THEN 1 ELSE 0 END)
+          - 1 * SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=1 THEN 1 ELSE 0 END)
           - 1 * SUM(CASE WHEN pd.status_kehadiran IN ('IZIN','SAKIT') THEN 1 ELSE 0 END)
         ) AS skor
 
       FROM guru g
-      LEFT JOIN presensi_detail pd
-        ON pd.id_guru = g.id_guru
-       AND DATE(COALESCE(pd.jam_masuk, pd.created_at)) BETWEEN :m1 AND :m2
+      JOIN presensi_detail pd ON pd.id_guru = g.id_guru
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal BETWEEN :m1 AND :m2
       GROUP BY g.id_guru, g.nama_guru, g.nip
       ORDER BY skor DESC, terlambat ASC, hadir DESC
       LIMIT 5
@@ -185,33 +168,20 @@ class DashboardController
     $stmt->execute([':m1' => $mStart, ':m2' => $mEnd]);
     $topDisiplin = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Top terlambat: hadir = hanya yang tidak terlambat
+    // Top Terlambat
     $stmt = $pdo->prepare("
       SELECT
         g.id_guru,
         g.nama_guru,
         g.nip,
 
-        SUM(
-          CASE
-            WHEN pd.status_kehadiran='HADIR'
-             AND COALESCE(pd.is_terlambat,0)=1
-            THEN 1 ELSE 0
-          END
-        ) AS terlambat,
-
-        SUM(
-          CASE
-            WHEN pd.status_kehadiran='HADIR'
-             AND COALESCE(pd.is_terlambat,0)=0
-            THEN 1 ELSE 0
-          END
-        ) AS hadir
+        SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=1 THEN 1 ELSE 0 END) AS terlambat,
+        SUM(CASE WHEN pd.status_kehadiran='HADIR' AND COALESCE(pd.is_terlambat,0)=0 THEN 1 ELSE 0 END) AS hadir
 
       FROM guru g
-      LEFT JOIN presensi_detail pd
-        ON pd.id_guru = g.id_guru
-       AND DATE(COALESCE(pd.jam_masuk, pd.created_at)) BETWEEN :m1 AND :m2
+      JOIN presensi_detail pd ON pd.id_guru = g.id_guru
+      JOIN kehadiran k ON pd.id_presensi = k.id_presensi
+      WHERE k.tanggal BETWEEN :m1 AND :m2
       GROUP BY g.id_guru, g.nama_guru, g.nip
       HAVING terlambat > 0
       ORDER BY terlambat DESC, hadir ASC

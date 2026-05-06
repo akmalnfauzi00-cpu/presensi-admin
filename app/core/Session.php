@@ -9,28 +9,36 @@ class Session
     }
   }
 
-  public static function flash(string $key, string $value): void
+  /**
+   * Jika $value diisi: Menyimpan pesan flash (Set)
+   * Jika $value null: Mengambil pesan flash (Get)
+   */
+  public static function flash(string $key, ?string $value = null): ?string
   {
     self::start();
-    $_SESSION['_flash'][$key] = $value;
-  }
-
-  public static function getFlash(string $key): ?string
-  {
-    self::start();
-
+    if ($value !== null) {
+      // Sedang menyimpan pesan
+      $_SESSION['_flash'][$key] = $value;
+      return null;
+    }
+    
+    // Sedang mengambil pesan
     if (!isset($_SESSION['_flash'][$key])) {
       return null;
     }
 
-    $value = $_SESSION['_flash'][$key];
+    $msg = $_SESSION['_flash'][$key];
     unset($_SESSION['_flash'][$key]);
+    return $msg;
+  }
 
-    return $value;
+  public static function getFlash(string $key): ?string
+  {
+    return self::flash($key);
   }
 
   public static function pullFlash(string $key): ?string
   {
-    return self::getFlash($key);
+    return self::flash($key);
   }
 }

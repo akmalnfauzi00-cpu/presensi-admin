@@ -385,14 +385,64 @@ a{text-decoration:none;color:inherit}
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE (UNTUK HP)
 ========================= */
-@media (max-width:820px){
-  .layout{
-    flex-direction:column;
+@media (max-width: 820px) {
+  .layout {
+    flex-direction: column; /* Sidebar jadi di atas, konten di bawah */
   }
-  .sidebar{
-    width:100%;
+
+  .sidebar {
+    width: 100%;
+    padding: 10px;
+    height: auto;
+  }
+
+  /* Sembunyikan sub-teks di logo agar hemat tempat */
+  .meta .sub {
+    display: none;
+  }
+
+  /* Buat menu navigasi berjejer ke samping (opsional) 
+     atau tetap ke bawah tapi lebih rapat */
+  .nav {
+    flex-direction: row; 
+    overflow-x: auto; /* Menu bisa di-geser ke samping */
+    padding-bottom: 5px;
+    gap: 5px;
+  }
+
+  .nav a {
+    white-space: nowrap; /* Teks menu tidak turun ke bawah */
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Hilangkan tombol logout di HP atau buat lebih kecil */
+  .sidebar .btn {
+    margin-top: 10px;
+    padding: 8px;
+  }
+
+  /* BAGIAN PALING PENTING: Supaya tabel tidak memotong layar */
+  .table-wrap {
+    overflow-x: auto; /* Munculkan scrollbar horizontal khusus di tabel */
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+
+  .table {
+    min-width: 600px; /* Paksa tabel punya lebar minimal agar tidak rapat sekali */
+  }
+
+  /* Header H2 di HP jangan terlalu besar */
+  .page-h2 {
+    font-size: 20px !important;
   }
 }
 

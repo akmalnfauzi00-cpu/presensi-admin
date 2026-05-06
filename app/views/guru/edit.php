@@ -25,17 +25,19 @@ $st = $row['status_aktif'] ?? 'AKTIF';
         </div>
 
         <div>
-          <label class="muted">NIP (Login Aplikasi) *</label>
+          <label class="muted">KTA (Login Aplikasi) *</label>
           <input class="input" name="nip" value="<?= htmlspecialchars($row['nip'] ?? '') ?>" required>
           <div class="muted" style="margin-top:6px;">NIP dipakai untuk login aplikasi presensi.</div>
         </div>
 
-        <!-- PASSWORD (opsional) -->
         <div>
           <label class="muted">Password Baru (Login Aplikasi)</label>
-          <input class="input" type="text" name="password" placeholder="Kosongkan jika tidak diubah">
-          <div class="muted" style="margin-top:6px;">
-            Jika diisi, password login aplikasi akan diganti.
+          <input class="input" type="text" name="password" id="passInputEdit" 
+                 placeholder="Kosongkan jika tidak diubah..." 
+                 pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                 title="Gagal! Password minimal 8 karakter, wajib ada huruf BESAR, huruf kecil, angka, dan simbol khusus (contoh: P@ssw0rd!).">
+          <div class="muted" style="margin-top:6px; font-size:12px; color:#EF4444;">
+            *Isi hanya jika ingin mengganti sandi lama. Wajib kuat (Huruf Besar, Kecil, Angka, Simbol).
           </div>
         </div>
 
